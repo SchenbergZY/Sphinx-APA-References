@@ -8,3 +8,7 @@ div.citation p {
   padding-left: 0.5in;
   text-indent: -0.5in;
 }
+
+div.citation span.backrefs {
+  float:right;
+}
