@@ -15,12 +15,12 @@ pybtex.plugin.register_plugin(
     force=True,
 )
 
-from formatting.apa import APAStyle, date, editor_names
+from formatting.apa import APAStyle, date, editor_names, pages
 from pybtex.richtext import Symbol, Text
 from pybtex.style.formatting import toplevel
 from pybtex.style.template import FieldIsMissing, node
 from pybtex.style.template import field as template_field
-from pybtex.style.template import first_of, join, optional, optional_field, sentence
+from pybtex.style.template import first_of, join, optional, optional_field, sentence, tag
 from sphinx.application import Sphinx
 from sphinx.util.fileutil import copy_asset_file
 from sphinxcontrib.bibtex.directives import BibliographyDirective
@@ -101,6 +101,32 @@ class APANoInbookPagePrefixStyle(APAStyle):
                 optional[self.format_doi(e)],
                 optional[self.format_url(e)],
             ]
+        ]
+
+    def get_article_template(self, e):
+        # Required fields: author, title, journal, year
+        # Optional fields: volume, number, pages, month, note, key, doi, url
+        volume_and_pages = first_of[
+            optional[
+                join[
+                    self.format_volume(e, for_article=True),
+                    optional[", ", template_field("pages")],
+                ],
+            ],
+            pages,
+        ]
+        return toplevel[
+            self.format_names("author"),
+            sentence[
+                join["(", date, ")"],
+            ],
+            self.format_title(e, "title"),
+            sentence[
+                tag("em")[template_field("journal")],
+                optional[volume_and_pages],
+            ],
+            sentence[optional_field("note")],
+            self.format_preferred_web_ref(e),
         ]
 
     def get_book_template(self, e):

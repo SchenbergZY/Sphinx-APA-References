@@ -55,6 +55,18 @@ class InbookPageFormattingTests(unittest.TestCase):
 
         self.assertIn("pp.", rendered)
 
+    def test_article_renders_only_doi_when_doi_and_url_exist(self):
+        rendered = render_entry(
+            "article",
+            "12-34",
+            doi="10.1234/article",
+            url="https://example.com/article",
+        )
+
+        self.assertIn("doi:10.1234/article", rendered)
+        self.assertNotIn("URL:", rendered)
+        self.assertNotIn("https://example.com/article", rendered)
+
     def test_extension_registers_custom_apa_formatter(self):
         register_plugins()
 
