@@ -18,6 +18,7 @@ pybtex.plugin.register_plugin(
 from formatting.apa import APAStyle, date, editor_names
 from pybtex.richtext import Symbol, Text
 from pybtex.style.formatting import toplevel
+from pybtex.style.template import FieldIsMissing, node
 from pybtex.style.template import field as template_field
 from pybtex.style.template import join, optional, optional_field, sentence
 from sphinx.application import Sphinx
@@ -66,6 +67,31 @@ pages_without_prefix = template_field(
 )
 
 
+@node
+def inbook_details_without_parentheses(children, context, **kwargs):
+    assert not children
+
+    entry = context["entry"]
+    parts = []
+
+    edition = entry.fields.get("edition")
+    if edition:
+        parts.append(Text(edition, " ed."))
+
+    volume = entry.fields.get("volume")
+    if volume:
+        parts.append(Text("Vol.", Symbol("nbsp"), volume))
+
+    pages = entry.fields.get("pages")
+    if pages:
+        parts.append(format_pages_without_prefix(pages))
+
+    if not parts:
+        raise FieldIsMissing("pages", entry)
+
+    return Text(", ").join(parts)
+
+
 class APANoInbookPagePrefixStyle(APAStyle):
     """APA style with unprefixed page ranges for inbook entries."""
 
@@ -84,17 +110,9 @@ class APANoInbookPagePrefixStyle(APAStyle):
                     editor_names(),
                     ",",
                 ],
-                self.format_btitle(e, "booktitle", as_sentence=False),
-                optional[
-                    join[
-                        "(",
-                        sentence(add_period=False)[
-                            optional[template_field("edition"), " ed."],
-                            self.format_volume(e),
-                            pages_without_prefix,
-                        ],
-                        ")",
-                    ]
+                join[
+                    self.format_btitle(e, "booktitle", as_sentence=False),
+                    optional[", ", inbook_details_without_parentheses()],
                 ],
             ],
             sentence(sep=": ")[

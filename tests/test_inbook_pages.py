@@ -31,7 +31,8 @@ class InbookPageFormattingTests(unittest.TestCase):
     def test_inbook_pages_do_not_render_page_prefix(self):
         rendered = render_entry("inbook", "12-34")
 
-        self.assertTrue("12-34" in rendered or "12\u201334" in rendered)
+        self.assertRegex(rendered, r"A Sample Book, 12[-\u2013]34")
+        self.assertNotRegex(rendered, r"A Sample Book \([^\)]*12[-\u2013]34\)")
         self.assertNotIn("pp. 12", rendered)
         self.assertNotIn("pp 12", rendered)
         self.assertNotIn("p. 12", rendered)
@@ -54,7 +55,8 @@ class InbookPageFormattingTests(unittest.TestCase):
 
         rendered = render_entry("inbook", "12-34", registered_style)
 
-        self.assertTrue("12-34" in rendered or "12\u201334" in rendered)
+        self.assertRegex(rendered, r"A Sample Book, 12[-\u2013]34")
+        self.assertNotRegex(rendered, r"A Sample Book \([^\)]*12[-\u2013]34\)")
         self.assertNotIn("pp. 12", rendered)
 
 
