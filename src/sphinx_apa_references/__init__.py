@@ -95,9 +95,41 @@ def inbook_details_without_parentheses(children, context, **kwargs):
 class APANoInbookPagePrefixStyle(APAStyle):
     """APA style with unprefixed page ranges for inbook entries."""
 
+    def format_preferred_web_ref(self, e):
+        return sentence(add_period=False)[
+            first_of[
+                optional[self.format_doi(e)],
+                optional[self.format_url(e)],
+            ]
+        ]
+
+    def get_book_template(self, e):
+        # Required fields: author/editor, title, publisher, year
+        # Optional fields: volume, series, address, edition, month, note, key,
+        #                  isbn, doi, url
+        return toplevel[
+            self.format_author_or_editor_and_date(e),
+            sentence(sep=" ")[
+                self.format_btitle(e, "title"),
+                optional[
+                    sentence[
+                        optional[template_field("edition"), " ed."],
+                        self.format_volume(e),
+                    ]
+                ],
+            ],
+            sentence(sep=": ")[
+                optional_field("address"),
+                template_field("publisher"),
+            ],
+            sentence[optional_field("note")],
+            self.format_preferred_web_ref(e),
+        ]
+
     def get_inbook_template(self, e):
         # Required fields: author/editor, title, chapter/pages, publisher, year
-        # Optional fields: volume, series, address, edition, month, note, key
+        # Optional fields: volume, series, address, edition, month, note, key,
+        #                  doi, url
         return toplevel[
             sentence(sep=" ")[
                 self.format_names("author"),
@@ -120,12 +152,7 @@ class APANoInbookPagePrefixStyle(APAStyle):
                 template_field("publisher"),
             ],
             sentence[optional_field("note")],
-            sentence(add_period=False)[
-                first_of[
-                    optional[self.format_doi(e)],
-                    optional[self.format_url(e)],
-                ]
-            ],
+            self.format_preferred_web_ref(e),
         ]
 
 

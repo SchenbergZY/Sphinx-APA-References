@@ -100,6 +100,34 @@ class InbookPageFormattingTests(unittest.TestCase):
         self.assertNotIn("URL:", rendered)
         self.assertNotIn("https://example.com/chapter", rendered)
 
+    def test_book_renders_doi_when_only_doi_exists(self):
+        rendered = render_entry("book", "12-34", doi="10.1234/book")
+
+        self.assertIn("doi:10.1234/book", rendered)
+        self.assertNotIn("URL:", rendered)
+
+    def test_book_renders_url_when_only_url_exists(self):
+        rendered = render_entry(
+            "book",
+            "12-34",
+            url="https://example.com/book",
+        )
+
+        self.assertIn("URL: https://example.com/book", rendered)
+        self.assertNotIn("doi:", rendered)
+
+    def test_book_renders_only_doi_when_doi_and_url_exist(self):
+        rendered = render_entry(
+            "book",
+            "12-34",
+            doi="10.1234/book",
+            url="https://example.com/book",
+        )
+
+        self.assertIn("doi:10.1234/book", rendered)
+        self.assertNotIn("URL:", rendered)
+        self.assertNotIn("https://example.com/book", rendered)
+
 
 if __name__ == "__main__":
     unittest.main()
