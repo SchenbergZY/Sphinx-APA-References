@@ -13,7 +13,10 @@ description = "A simple Sphinx extension that allows you to have APA formatting 
 readme = "README.md"
 dependencies = [
     "sphinx",
-    "pybtex"
+    "pybtex",
+    "sphinxcontrib-bibtex",
+    "pybtex-apa-style",
+    "six"
 ]
 requires-python = ">=3.10"
 

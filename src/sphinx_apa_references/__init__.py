@@ -1,7 +1,14 @@
 import os
+import re
 from dataclasses import dataclass, field
 
+import pybtex.plugin
 import sphinxcontrib.bibtex.plugin
+from formatting.apa import APAStyle, date, editor_names
+from pybtex.richtext import Symbol, Text
+from pybtex.style.formatting import toplevel
+from pybtex.style.template import field as template_field
+from pybtex.style.template import join, optional, optional_field, sentence
 from sphinx.application import Sphinx
 from sphinx.util.fileutil import copy_asset_file
 from sphinxcontrib.bibtex.directives import BibliographyDirective
@@ -37,6 +44,56 @@ class MyReferenceStyle(AuthorYearReferenceStyle):
     bracket_year: BracketStyle = field(default_factory=bracket_style)
 
 
+def format_pages_without_prefix(text):
+    page_parts = re.split(r"[-\u2012\u2013\u2014\u2015]+", str(text))
+    return Text(Symbol("ndash")).join(page_parts)
+
+
+pages_without_prefix = template_field(
+    "pages",
+    apply_func=format_pages_without_prefix,
+)
+
+
+class APANoInbookPagePrefixStyle(APAStyle):
+    """APA style with unprefixed page ranges for inbook entries."""
+
+    def get_inbook_template(self, e):
+        # Required fields: author/editor, title, chapter/pages, publisher, year
+        # Optional fields: volume, series, address, edition, month, note, key
+        return toplevel[
+            sentence(sep=" ")[
+                self.format_names("author"),
+                join["(", date, ")"],
+            ],
+            self.format_title(e, "title"),
+            sentence(sep=" ")[
+                optional[
+                    "In ",
+                    editor_names(),
+                    ",",
+                ],
+                self.format_btitle(e, "booktitle", as_sentence=False),
+                optional[
+                    join[
+                        "(",
+                        sentence(add_period=False)[
+                            optional[template_field("edition"), " ed."],
+                            self.format_volume(e),
+                            pages_without_prefix,
+                        ],
+                        ")",
+                    ]
+                ],
+            ],
+            sentence(sep=": ")[
+                optional_field("address"),
+                template_field("publisher"),
+            ],
+            sentence[optional_field("note")],
+        ]
+
+
 def copy_stylesheet(app: Sphinx, exc: None) -> None:
     base_dir = os.path.dirname(__file__)
     style = os.path.join(base_dir, "assets", "apastyle.css")
@@ -52,13 +109,24 @@ def override_config(app, config):
     config.bibtex_reference_style = "author_year_round"  # override or set
 
 
-def setup(app):
-    app.setup_extension("sphinxcontrib.bibtex")
+def register_plugins():
     sphinxcontrib.bibtex.plugin.register_plugin(
         "sphinxcontrib.bibtex.style.referencing",
         "author_year_round",
         MyReferenceStyle,
+        force=True,
     )
+    pybtex.plugin.register_plugin(
+        "pybtex.style.formatting",
+        "apa",
+        APANoInbookPagePrefixStyle,
+        force=True,
+    )
+
+
+def setup(app):
+    app.setup_extension("sphinxcontrib.bibtex")
+    register_plugins()
     app.add_directive("bibliography", APABibliographyDirective, override=True)
     app.connect("build-finished", copy_stylesheet)
     app.add_css_file("apastyle.css")
