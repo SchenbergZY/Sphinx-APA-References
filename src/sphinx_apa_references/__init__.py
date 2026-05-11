@@ -4,6 +4,17 @@ from dataclasses import dataclass, field
 
 import pybtex.plugin
 import sphinxcontrib.bibtex.plugin
+from names.firstlast import NameStyle as APAFirstLastNameStyle
+
+# formatting.apa resolves firstlast at import time, so pin the matching
+# pybtex-apa-style name plugin before other distributions can shadow it.
+pybtex.plugin.register_plugin(
+    "pybtex.style.names",
+    "firstlast",
+    APAFirstLastNameStyle,
+    force=True,
+)
+
 from formatting.apa import APAStyle, date, editor_names
 from pybtex.richtext import Symbol, Text
 from pybtex.style.formatting import toplevel
