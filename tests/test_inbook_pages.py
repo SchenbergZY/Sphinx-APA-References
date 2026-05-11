@@ -50,10 +50,13 @@ class InbookPageFormattingTests(unittest.TestCase):
         self.assertNotIn("pp 12", rendered)
         self.assertNotIn("p. 12", rendered)
 
-    def test_page_prefix_is_unchanged_for_other_entry_types(self):
+    def test_article_pages_do_not_render_page_prefix(self):
         rendered = render_entry("article", "12-34")
 
-        self.assertIn("pp.", rendered)
+        self.assertRegex(rendered, r"A Sample Journal, 12[-\u2013]34")
+        self.assertNotIn("pp. 12", rendered)
+        self.assertNotIn("pp 12", rendered)
+        self.assertNotIn("p. 12", rendered)
 
     def test_article_renders_only_doi_when_doi_and_url_exist(self):
         rendered = render_entry(

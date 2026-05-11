@@ -15,7 +15,7 @@ pybtex.plugin.register_plugin(
     force=True,
 )
 
-from formatting.apa import APAStyle, date, editor_names, pages
+from formatting.apa import APAStyle, date, editor_names
 from pybtex.richtext import Symbol, Text
 from pybtex.style.formatting import toplevel
 from pybtex.style.template import FieldIsMissing, node
@@ -110,10 +110,10 @@ class APANoInbookPagePrefixStyle(APAStyle):
             optional[
                 join[
                     self.format_volume(e, for_article=True),
-                    optional[", ", template_field("pages")],
+                    optional[", ", pages_without_prefix],
                 ],
             ],
-            pages,
+            pages_without_prefix,
         ]
         return toplevel[
             self.format_names("author"),
