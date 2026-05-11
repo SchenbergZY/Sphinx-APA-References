@@ -20,7 +20,7 @@ from pybtex.richtext import Symbol, Text
 from pybtex.style.formatting import toplevel
 from pybtex.style.template import FieldIsMissing, node
 from pybtex.style.template import field as template_field
-from pybtex.style.template import join, optional, optional_field, sentence
+from pybtex.style.template import first_of, join, optional, optional_field, sentence
 from sphinx.application import Sphinx
 from sphinx.util.fileutil import copy_asset_file
 from sphinxcontrib.bibtex.directives import BibliographyDirective
@@ -120,6 +120,12 @@ class APANoInbookPagePrefixStyle(APAStyle):
                 template_field("publisher"),
             ],
             sentence[optional_field("note")],
+            sentence(add_period=False)[
+                first_of[
+                    optional[self.format_doi(e)],
+                    optional[self.format_url(e)],
+                ]
+            ],
         ]
 
 

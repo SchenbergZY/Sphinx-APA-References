@@ -6,7 +6,19 @@ from pybtex.plugin import find_plugin
 from sphinx_apa_references import APANoInbookPagePrefixStyle, register_plugins
 
 
-def render_entry(entry_type, pages, style_class=APANoInbookPagePrefixStyle):
+def render_entry(
+    entry_type,
+    pages,
+    style_class=APANoInbookPagePrefixStyle,
+    doi=None,
+    url=None,
+):
+    web_fields = ""
+    if doi:
+        web_fields += f"            doi = {{{doi}}},\n"
+    if url:
+        web_fields += f"            url = {{{url}}},\n"
+
     bib_data = parse_string(
         f"""
         @{entry_type}{{sample,
@@ -18,6 +30,7 @@ def render_entry(entry_type, pages, style_class=APANoInbookPagePrefixStyle):
             publisher = {{Example Press}},
             year = {{2024}},
             pages = {{{pages}}},
+{web_fields}
         }}
         """,
         "bibtex",
@@ -58,6 +71,34 @@ class InbookPageFormattingTests(unittest.TestCase):
         self.assertRegex(rendered, r"A Sample Book, 12[-\u2013]34")
         self.assertNotRegex(rendered, r"A Sample Book \([^\)]*12[-\u2013]34\)")
         self.assertNotIn("pp. 12", rendered)
+
+    def test_inbook_renders_doi_when_only_doi_exists(self):
+        rendered = render_entry("inbook", "12-34", doi="10.1234/example")
+
+        self.assertIn("doi:10.1234/example", rendered)
+        self.assertNotIn("URL:", rendered)
+
+    def test_inbook_renders_url_when_only_url_exists(self):
+        rendered = render_entry(
+            "inbook",
+            "12-34",
+            url="https://example.com/chapter",
+        )
+
+        self.assertIn("URL: https://example.com/chapter", rendered)
+        self.assertNotIn("doi:", rendered)
+
+    def test_inbook_renders_only_doi_when_doi_and_url_exist(self):
+        rendered = render_entry(
+            "inbook",
+            "12-34",
+            doi="10.1234/example",
+            url="https://example.com/chapter",
+        )
+
+        self.assertIn("doi:10.1234/example", rendered)
+        self.assertNotIn("URL:", rendered)
+        self.assertNotIn("https://example.com/chapter", rendered)
 
 
 if __name__ == "__main__":
