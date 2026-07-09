@@ -8,16 +8,18 @@ from sphinx_apa_references import APANoInbookPagePrefixStyle, register_plugins
 
 def render_entry(
     entry_type,
-    pages,
+    pages=None,
     style_class=APANoInbookPagePrefixStyle,
     doi=None,
     url=None,
 ):
-    web_fields = ""
+    optional_fields = ""
+    if pages:
+        optional_fields += f"            pages = {{{pages}}},\n"
     if doi:
-        web_fields += f"            doi = {{{doi}}},\n"
+        optional_fields += f"            doi = {{{doi}}},\n"
     if url:
-        web_fields += f"            url = {{{url}}},\n"
+        optional_fields += f"            url = {{{url}}},\n"
 
     bib_data = parse_string(
         f"""
@@ -29,8 +31,7 @@ def render_entry(
             journal = {{A Sample Journal}},
             publisher = {{Example Press}},
             year = {{2024}},
-            pages = {{{pages}}},
-{web_fields}
+{optional_fields}
         }}
         """,
         "bibtex",
@@ -142,6 +143,40 @@ class InbookPageFormattingTests(unittest.TestCase):
         self.assertIn("doi:10.1234/book", rendered)
         self.assertNotIn("URL:", rendered)
         self.assertNotIn("https://example.com/book", rendered)
+
+    def test_incollection_uses_chapter_format_and_prefers_doi(self):
+        rendered = render_entry(
+            "incollection",
+            "12-34",
+            doi="10.1234/collection",
+            url="https://example.com/collection",
+        )
+
+        self.assertRegex(rendered, r"A Sample Book, 12[-\u2013]34")
+        self.assertNotIn("pp.", rendered)
+        self.assertIn("doi:10.1234/collection", rendered)
+        self.assertNotIn("URL:", rendered)
+        self.assertNotIn("https://example.com/collection", rendered)
+
+    def test_online_renders_url_when_doi_missing(self):
+        rendered = render_entry(
+            "online",
+            url="https://example.com/online",
+        )
+
+        self.assertIn("URL: https://example.com/online", rendered)
+        self.assertNotIn("doi:", rendered)
+
+    def test_online_prefers_doi_over_url(self):
+        rendered = render_entry(
+            "online",
+            doi="10.1234/online",
+            url="https://example.com/online",
+        )
+
+        self.assertIn("doi:10.1234/online", rendered)
+        self.assertNotIn("URL:", rendered)
+        self.assertNotIn("https://example.com/online", rendered)
 
 
 if __name__ == "__main__":

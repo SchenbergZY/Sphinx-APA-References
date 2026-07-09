@@ -20,7 +20,14 @@ from pybtex.richtext import Symbol, Text
 from pybtex.style.formatting import toplevel
 from pybtex.style.template import FieldIsMissing, node
 from pybtex.style.template import field as template_field
-from pybtex.style.template import first_of, join, optional, optional_field, sentence, tag
+from pybtex.style.template import (
+    first_of,
+    join,
+    optional,
+    optional_field,
+    sentence,
+    tag,
+)
 from sphinx.application import Sphinx
 from sphinx.util.fileutil import copy_asset_file
 from sphinxcontrib.bibtex.directives import BibliographyDirective
@@ -93,7 +100,7 @@ def inbook_details_without_parentheses(children, context, **kwargs):
 
 
 class APANoInbookPagePrefixStyle(APAStyle):
-    """APA style with unprefixed page ranges for inbook entries."""
+    """Customized APA style for the bibliography entry types we support."""
 
     def format_preferred_web_ref(self, e):
         return sentence(add_period=False)[
@@ -177,6 +184,38 @@ class APANoInbookPagePrefixStyle(APAStyle):
                 optional_field("address"),
                 template_field("publisher"),
             ],
+            sentence[optional_field("note")],
+            self.format_preferred_web_ref(e),
+        ]
+
+    def get_incollection_template(self, e):
+        return self.get_inbook_template(e)
+
+    def get_online_template(self, e):
+        # Required field: title
+        # Optional fields: author/editor, organization, year/date, note,
+        #                  doi, url
+        if "author" in e.persons:
+            creator = self.format_names("author", as_sentence=False)
+        elif "editor" in e.persons:
+            creator = self.format_editor(e, as_sentence=False)
+        else:
+            creator = optional_field("organization")
+
+        return toplevel[
+            sentence(sep=" ")[
+                creator,
+                join[
+                    "(",
+                    first_of[
+                        optional[date],
+                        optional_field("date"),
+                        "n.d.",
+                    ],
+                    ")",
+                ],
+            ],
+            self.format_title(e, "title"),
             sentence[optional_field("note")],
             self.format_preferred_web_ref(e),
         ]
